@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#060810">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="icon" type="image/x-icon" href="icons/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
@@ -68,6 +69,7 @@ onAuthStateChanged(fbAuth, user => {
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{background:var(--bg);color:var(--tx);font-family:var(--ff);min-height:100vh;overflow-x:hidden}
+body{padding-bottom:env(safe-area-inset-bottom,0px)}
 body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:linear-gradient(rgba(0,212,255,.02) 1px,transparent 1px),
              linear-gradient(90deg,rgba(0,212,255,.02) 1px,transparent 1px);
@@ -75,12 +77,13 @@ body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 #app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding-bottom:80px}
 
 /* ── HEADER ── */
-header{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;
+header{padding:10px 16px;display:grid;grid-template-columns:46px 1fr 46px;align-items:center;
   position:sticky;top:0;z-index:500;background:rgba(6,8,16,.96);
   backdrop-filter:blur(18px);border-bottom:1px solid var(--b1)}
-.logo{font-size:19px;font-weight:800;letter-spacing:.13em;color:var(--ac);text-transform:uppercase}
+.logo{font-size:19px;font-weight:800;letter-spacing:.13em;color:var(--ac);text-transform:uppercase;
+  text-align:center;justify-self:center}
 .logo span{color:var(--tx);opacity:.35}
-.hdr-r{display:flex;gap:6px;align-items:center}
+.hdr-r{display:flex;gap:6px;align-items:center;justify-self:end}
 .hbtn{min-width:46px;height:46px;padding:0 12px;border-radius:10px;border:1px solid var(--b1);
   background:var(--s1);color:var(--tm);display:flex;align-items:center;justify-content:center;
   cursor:pointer;font-size:22px;user-select:none;touch-action:manipulation;white-space:nowrap}
@@ -197,6 +200,15 @@ header{padding:14px 16px 10px;display:flex;align-items:center;justify-content:sp
   justify-content:center;font-size:13px;flex-shrink:0;cursor:pointer;touch-action:manipulation;
   opacity:.7;transition:opacity .15s}
 .sec-chart-btn:active,.sec-chart-btn:hover{opacity:1;background:rgba(0,212,255,.2)}
+.sec-drag-handle{width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  color:#6b7280;font-size:15px;flex-shrink:0;cursor:grab;touch-action:none;user-select:none;
+  opacity:0;transition:opacity .2s;border-radius:5px}
+.sec-hdr:hover .sec-drag-handle,.sec-wrap.sec-drag-active .sec-drag-handle{opacity:1}
+.sec-wrap.sec-drag-active{opacity:.55;transform:scale(.98) translateY(-2px);
+  background:rgba(0,212,255,.04);border-radius:10px;
+  outline:1px dashed var(--ac)}
+.sec-wrap.sec-drag-target-above{border-top:2px solid var(--ac)}
+.sec-wrap.sec-drag-target-below{border-bottom:2px solid var(--ac)}
 .sec-body{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;overflow:hidden}
 .sec-body.collapsed{display:none}
 
@@ -659,11 +671,11 @@ header{padding:14px 16px 10px;display:flex;align-items:center;justify-content:sp
 
 <!-- HEADER -->
 <header>
+  <button class="hbtn" onclick="toggleHamburger()" id="hamburgerBtn" title="Menü" style="letter-spacing:1px">☰</button>
   <div class="logo">TICK<span>ER</span></div>
   <div class="hdr-r">
-    <button class="hbtn" id="refreshBtn" onclick="refreshAll()">↻</button>
-    <button class="hbtn" id="depotNavBtn" onclick="openDepotList()" title="Musterdepots">📊</button>
-    <button class="hbtn" onclick="toggleHamburger()" id="hamburgerBtn" title="Menü" style="letter-spacing:1px">☰</button>
+    <button class="hbtn" id="hdrLoginBtn" onclick="showAuthPanel()" title="Anmelden" style="display:none">👤</button>
+    <button class="hbtn" id="hdrUserBtn" onclick="closeHamburger();showAuthPanel()" title="Konto" style="display:none">👤</button>
   </div>
 </header>
 
@@ -712,6 +724,22 @@ header{padding:14px 16px 10px;display:flex;align-items:center;justify-content:sp
     <div style="display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;color:var(--td);margin-top:2px">
       <span>streng (5%)</span><span>locker (50%)</span>
     </div>
+  </div>
+  <div class="ham-sep"></div>
+  <div class="ham-item" onclick="closeHamburger();openFAQ()">
+    <span class="ham-icon">❓</span><span>Hilfe & FAQ</span>
+  </div>
+</div>
+
+<!-- FAQ PANEL -->
+<div class="auth-panel" id="faqPanel" style="overflow-y:auto;align-items:flex-start;padding:20px 0 40px">
+  <div style="width:100%;max-width:480px;margin:0 auto;padding:0 16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-top:8px">
+      <div style="font-size:20px;font-weight:800;letter-spacing:.1em;color:var(--ac)">FAQ</div>
+      <button onclick="closeFAQ()" style="background:var(--s1);border:1px solid var(--b1);border-radius:10px;
+        color:var(--tm);width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div id="faqContent"></div>
   </div>
 </div>
 
@@ -971,6 +999,20 @@ header{padding:14px 16px 10px;display:flex;align-items:center;justify-content:sp
   <div class="sec-del-btns">
     <button class="sec-del-cancel" onclick="closeSecDel()">Abbrechen</button>
     <button class="sec-del-ok" onclick="secCtxConfirmDelete()">Löschen</button>
+  </div>
+</div>
+
+<!-- Sektion-Auswahl für Ticker hinzufügen -->
+<div class="sec-ctx-overlay" id="secPickOverlay" onclick="closeSecPicker()"></div>
+<div class="sec-ctx-menu" id="secPickMenu" style="max-height:80vh;overflow-y:auto">
+  <div class="sec-ctx-hdr">
+    <strong id="secPickSym" style="color:var(--ac)">—</strong>
+    <span id="secPickNm" style="font-size:11px;color:#8b95a6">In welche Sektion?</span>
+  </div>
+  <div id="secPickList"></div>
+  <div style="padding:8px 16px 4px">
+    <button onclick="closeSecPicker()" style="width:100%;padding:13px;border-radius:12px;border:1px solid var(--b1);
+      background:var(--s2);color:var(--tm);font-family:var(--ff);font-size:14px;cursor:pointer">Abbrechen</button>
   </div>
 </div>
 
@@ -1333,6 +1375,8 @@ function updateHamUserUI(user) {
   const avatar    = document.getElementById('hamAvatar');
   const nameEl    = document.getElementById('hamUserName');
   const emailEl   = document.getElementById('hamUserEmail');
+  const hdrLoginBtn = document.getElementById('hdrLoginBtn');
+  const hdrUserBtn  = document.getElementById('hdrUserBtn');
   if (user) {
     userRow.style.display   = 'flex';
     loginItem.style.display = 'none';
@@ -1345,11 +1389,15 @@ function updateHamUserUI(user) {
       avatar.textContent = (user.displayName || user.email || '?')[0].toUpperCase();
       avatar.innerHTML = avatar.textContent;
     }
+    if (hdrLoginBtn) hdrLoginBtn.style.display = 'none';
+    if (hdrUserBtn)  hdrUserBtn.style.display  = 'flex';
   } else {
     userRow.style.display   = 'none';
     loginItem.style.display = 'flex';
     logoutItem.style.display= 'none';
     setSyncDot('');
+    if (hdrLoginBtn) hdrLoginBtn.style.display = 'flex';
+    if (hdrUserBtn)  hdrUserBtn.style.display  = 'none';
   }
 }
 
@@ -1363,6 +1411,78 @@ function showAuthPanel() {
 function hideAuthPanel() {
   document.getElementById('authPanel').classList.remove('on');
 }
+
+const FAQ_ITEMS = [
+  {
+    q: 'Was ist TICKER?',
+    a: 'TICKER ist eine kostenlose, werbefreie Watchlist-App für Aktien, ETFs, Rohstoffe, Krypto und Wikifolio-Zertifikate. Alle Daten werden direkt auf deinem Gerät gespeichert (localStorage). Optional kannst du dich anmelden, um deine Watchlist geräteübergreifend zu synchronisieren.'
+  },
+  {
+    q: 'Woher kommen die Kursdaten?',
+    a: 'Kurse werden in Echtzeit über Yahoo Finance abgerufen (primäre Quelle). Als Fallback dient Stooq. Für Wikifolio-Zertifikate wird die onvista-API verwendet. Alle Daten sind kostenlos und öffentlich zugänglich – es fallen keine Kosten an.'
+  },
+  {
+    q: 'Wie suche ich nach einem Ticker?',
+    a: 'Gib in der Suchleiste den Ticker-Symbol (z.B. AAPL, VUSA.L) oder den Unternehmensnamen (z.B. Apple, Volkswagen) ein und tippe auf „Suchen". Die besten Ergebnisse erzielst du mit dem exakten Yahoo Finance Ticker-Symbol. Tipp: Europäische Aktien haben oft ein Börsensuffix, z.B. „VOW3.DE" für VW an der Frankfurter Börse.'
+  },
+  {
+    q: 'Wie füge ich einen Ticker zur Watchlist hinzu?',
+    a: 'Tippe nach der Suche auf das ＋-Symbol rechts neben dem Ergebnis. Falls deine Watchlist mehrere Sektionen hat, öffnet sich ein Auswahl-Dialog – wähle einfach die gewünschte Sektion. Bereits vorhandene Symbole sind als ✓ markiert.'
+  },
+  {
+    q: 'Was sind Sektionen?',
+    a: 'Sektionen sind Gruppen innerhalb einer Watchlist, z.B. „Basis", „Rohstoffe", „Krypto". Du kannst Sektionen mit dem Button „＋ Sektion" erstellen. Zum Umbenennen oder Löschen lange auf den Sektions-Header tippen. Zum Verschieben das ⠿-Symbol links am Header ziehen.'
+  },
+  {
+    q: 'Was ist das Musterdepot?',
+    a: 'Mit dem Musterdepot (im Hamburger-Menü unter „Musterdepots") kannst du ein virtuelles Portfolio anlegen und die Gesamtperformance verfolgen. Du kannst mehrere Depots anlegen und diese untereinander oder mit Benchmarks (z.B. S&P 500) vergleichen.'
+  },
+  {
+    q: 'Welche Chart-Funktionen gibt es?',
+    a: 'Tippe auf ein Symbol um den Chart zu öffnen. Verfügbare Zeiträume: 1 Tag, 1 Woche, 1 Monat, 3 Monate, 1 Jahr, 5 Jahre. Optional: SMA38 und SMA200 als Overlays, Vergleichsmodus mit bis zu 4 weiteren Symbolen, Candlestick-Ansicht. Vortag-Linien (open/close) als gestrichelte Referenz.'
+  },
+  {
+    q: 'Was bedeutet der Outlier-Filter?',
+    a: 'Der Outlier-Filter (im Hamburger-Menü einstellbar) entfernt statistische Ausreißer aus den Spark-Charts. Ein strenger Filter (5%) glättet stärker, ein lockerer Filter (50%) zeigt alle Datenpunkte inkl. starker Kurs-Spikes. Standard: 25%.'
+  },
+  {
+    q: 'Wie funktioniert die Synchronisation?',
+    a: 'Nach dem Anmelden (Google oder E-Mail) wird deine Watchlist automatisch in der Firebase-Cloud gespeichert und auf allen deinen Geräten synchronisiert. Ohne Anmeldung werden die Daten nur lokal gespeichert. Du kannst jederzeit einen Export als HTML-Datei erstellen (Hamburger-Menü → Export).'
+  },
+  {
+    q: 'Was kostet die App? Gibt es Werbung?',
+    a: 'TICKER ist vollständig kostenlos und werbefrei. Die App nutzt ausschließlich gratis Dienste: Yahoo Finance & Stooq für Kurse, onvista für Wikifolio, Firebase (Free Tier) für Synchronisation und Cloudflare Workers für den API-Proxy.'
+  }
+];
+
+function openFAQ() {
+  const content = document.getElementById('faqContent');
+  content.innerHTML = FAQ_ITEMS.map((item, i) => `
+    <div onclick="toggleFaqItem(${i})" style="margin-bottom:10px;border-radius:12px;
+      border:1px solid var(--b1);background:var(--s1);overflow:hidden;cursor:pointer">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+        font-weight:600;font-size:14px;color:var(--tx)">
+        <span>${esc(item.q)}</span>
+        <span id="faq-arrow-${i}" style="color:var(--ac);font-size:14px;transition:transform .2s;flex-shrink:0;margin-left:8px">▾</span>
+      </div>
+      <div id="faq-body-${i}" style="display:none;padding:0 16px 14px;font-family:var(--fm);
+        font-size:12px;color:var(--tm);line-height:1.7;border-top:1px solid var(--b1)">${esc(item.a)}</div>
+    </div>`).join('');
+  document.getElementById('faqPanel').classList.add('on');
+}
+
+function toggleFaqItem(i) {
+  const body  = document.getElementById(`faq-body-${i}`);
+  const arrow = document.getElementById(`faq-arrow-${i}`);
+  const open  = body.style.display === 'block';
+  body.style.display  = open ? 'none' : 'block';
+  arrow.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+function closeFAQ() {
+  document.getElementById('faqPanel').classList.remove('on');
+}
+
 function toggleAuthMode() {
   _authMode = _authMode === 'login' ? 'register' : 'login';
   const btn    = document.getElementById('authSubmitBtn');
@@ -1671,6 +1791,7 @@ function renderWL() {
     const hdr = document.createElement('div');
     hdr.className = 'sec-hdr' + (sec.collapsed ? ' collapsed' : '');
     hdr.innerHTML = `
+      <div class="sec-drag-handle" title="Sektion verschieben">⠿</div>
       <span class="sec-arrow">▾</span>
       <span class="sec-name">${esc(sec.name)}</span>
       <span class="sec-count">${items.length}</span>
@@ -1684,6 +1805,9 @@ function renderWL() {
     hdr.addEventListener('click', () => toggleSection(sec.id));
     // Long-press auf Sektion-Header → Sektion umbenennen/löschen
     addLongPress(hdr, () => openSectionCtx(sec.id));
+    // Drag-Handle für Sektionen verschieben
+    const secDragHandle = hdr.querySelector('.sec-drag-handle');
+    if (secDragHandle) initSectionDragHandle(secDragHandle, secEl, sec.id);
     secEl.appendChild(hdr);
 
     const body = document.createElement('div');
@@ -1771,12 +1895,115 @@ function addLongPress(el, cb) {
   // Only start long-press timer if touch didn't originate on the chart button
   el.addEventListener('touchstart', e => {
     if (e.target.closest('.sec-chart-btn')) return;
+    if (e.target.closest('.sec-drag-handle')) return;
     t = setTimeout(cb, 600);
   }, {passive:true});
   el.addEventListener('touchend', () => clearTimeout(t), {passive:true});
   el.addEventListener('touchmove', () => clearTimeout(t), {passive:true});
   el.addEventListener('contextmenu', e => { e.preventDefault(); cb(); });
 }
+
+// ─── Section Drag Reorder (via ⠿ Handle) ───
+function initSectionDragHandle(handle, secEl, secId) {
+  let startY = 0, dragging = false, clone = null;
+
+  function getAllSecWraps() {
+    return Array.from(document.querySelectorAll('#wl .sec-wrap'));
+  }
+
+  function startDrag(clientY) {
+    startY = clientY;
+    dragging = false;
+  }
+
+  function moveDrag(clientY) {
+    const dy = clientY - startY;
+    if (!dragging && Math.abs(dy) > 6) {
+      dragging = true;
+      secEl.classList.add('sec-drag-active');
+      clone = secEl.cloneNode(true);
+      clone.style.cssText = `position:fixed;left:${secEl.getBoundingClientRect().left}px;
+        width:${secEl.offsetWidth}px;z-index:9999;opacity:.85;pointer-events:none;
+        background:var(--s1);border-radius:10px;border:1px solid var(--ac)`;
+      clone.style.top = (secEl.getBoundingClientRect().top) + 'px';
+      document.body.appendChild(clone);
+    }
+    if (!dragging) return;
+    clone.style.top = (clientY - 30) + 'px';
+    const wraps = getAllSecWraps();
+    wraps.forEach(w => w.classList.remove('sec-drag-target-above','sec-drag-target-below'));
+    for (const w of wraps) {
+      if (w === secEl) continue;
+      const r = w.getBoundingClientRect();
+      const mid = r.top + r.height / 2;
+      if (clientY < mid) { w.classList.add('sec-drag-target-above'); break; }
+      else { w.classList.remove('sec-drag-target-above'); w.classList.add('sec-drag-target-below'); }
+    }
+  }
+
+  function endDrag() {
+    if (clone) { clone.remove(); clone = null; }
+    secEl.classList.remove('sec-drag-active');
+    if (!dragging) { dragging = false; return; }
+    dragging = false;
+    const wraps = getAllSecWraps();
+    let targetEl = null, insertBefore = true;
+    wraps.forEach(w => {
+      if (w.classList.contains('sec-drag-target-above')) { targetEl = w; insertBefore = true; }
+      if (w.classList.contains('sec-drag-target-below')) { targetEl = w; insertBefore = false; }
+      w.classList.remove('sec-drag-target-above','sec-drag-target-below');
+    });
+    if (targetEl && targetEl !== secEl) {
+      const targetId = targetEl.dataset.secId;
+      const activeSecs = S.sections.filter(s=>s.wlId===S.activeWlId);
+      const fromIdx = activeSecs.findIndex(s=>s.id===secId);
+      const toIdx   = activeSecs.findIndex(s=>s.id===targetId);
+      if (fromIdx !== -1 && toIdx !== -1) {
+        const [moved] = activeSecs.splice(fromIdx, 1);
+        const insertAt = insertBefore ? toIdx - (fromIdx < toIdx ? 1 : 0) : toIdx - (fromIdx < toIdx ? 0 : -1);
+        activeSecs.splice(Math.max(0, insertBefore && fromIdx < toIdx ? toIdx - 1 : !insertBefore && fromIdx > toIdx ? toIdx + 1 : toIdx), 0, moved);
+        // Rebuild S.sections preserving other watchlists
+        const otherSecs = S.sections.filter(s=>s.wlId!==S.activeWlId);
+        // Reorder: remove the moved sec and reinsert
+        const reordered = S.sections.filter(s=>s.wlId===S.activeWlId);
+        const fi = reordered.findIndex(s=>s.id===secId);
+        const ti = reordered.findIndex(s=>s.id===targetId);
+        if (fi !== -1 && ti !== -1) {
+          const [m] = reordered.splice(fi, 1);
+          reordered.splice(insertBefore ? (fi < ti ? ti - 1 : ti) : (fi < ti ? ti : ti + 1), 0, m);
+          S.sections = [...otherSecs, ...reordered];
+          persist(); renderWL();
+          toast('Sektion verschoben ✓');
+        }
+      }
+    }
+  }
+
+  // Touch
+  handle.addEventListener('touchstart', e => {
+    e.stopPropagation();
+    startDrag(e.touches[0].clientY);
+  }, {passive:true});
+  handle.addEventListener('touchmove', e => {
+    e.preventDefault(); e.stopPropagation();
+    moveDrag(e.touches[0].clientY);
+  }, {passive:false});
+  handle.addEventListener('touchend', e => {
+    e.stopPropagation();
+    endDrag();
+  }, {passive:true});
+  // Mouse (Desktop)
+  handle.addEventListener('mousedown', e => {
+    e.stopPropagation(); e.preventDefault();
+    startDrag(e.clientY);
+    const onMove = ev => moveDrag(ev.clientY);
+    const onUp   = () => { endDrag(); document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+  });
+}
+
+
 
 // ─── Touch-Drag Reorder (via ⠿ Handle) ───
 function initDragHandle(handle, cardEl, sym, secId) {
@@ -3557,23 +3784,91 @@ function renderDrop(results, query) {
 // ═══════════════════════════════════════════════════════════════════════
 //  SYMBOLE VERWALTEN
 // ═══════════════════════════════════════════════════════════════════════
+// ── Sektion-Picker für Ticker hinzufügen ──
+let _secPickSym = '', _secPickNm = '';
+
+function showSecPicker(sym, nm) {
+  _secPickSym = sym; _secPickNm = nm;
+  const activeSecs = S.sections.filter(s=>s.wlId===S.activeWlId);
+  const activeSecIds = new Set(activeSecs.map(s=>s.id));
+
+  document.getElementById('secPickSym').textContent = sym;
+  document.getElementById('secPickNm').textContent  = nm || 'In welche Sektion?';
+
+  const list = document.getElementById('secPickList');
+  list.innerHTML = '';
+  activeSecs.forEach(sec => {
+    const inSec = S.watchlist.some(i=>i.sym===sym && i.section===sec.id);
+    const items = S.watchlist.filter(i=>i.section===sec.id);
+    const row = document.createElement('div');
+    row.className = 'ctx-item' + (inSec ? '' : '');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 20px';
+    row.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span style="font-size:15px;font-weight:600;color:${inSec?'var(--tm)':'var(--tx)'}">${esc(sec.name)}</span>
+        <span style="font-family:var(--fm);font-size:10px;color:var(--td)">${items.length} Symbol${items.length!==1?'e':''}</span>
+      </div>
+      <span style="font-size:18px">${inSec?'✓':''}</span>`;
+    if (!inSec) {
+      row.style.cursor = 'pointer';
+      const addFn = () => { closeSecPicker(); addToWLInSection(sym, nm, sec.id); };
+      row.addEventListener('click', addFn);
+      row.addEventListener('touchstart', e => { e.preventDefault(); addFn(); }, {passive:false});
+    } else {
+      row.style.opacity = '.55';
+    }
+    list.appendChild(row);
+    // Separator
+    const sep = document.createElement('div');
+    sep.className = 'ham-sep';
+    list.appendChild(sep);
+  });
+
+  document.getElementById('secPickOverlay').classList.add('on');
+  document.getElementById('secPickMenu').classList.add('on');
+}
+
+function closeSecPicker() {
+  document.getElementById('secPickOverlay').classList.remove('on');
+  document.getElementById('secPickMenu').classList.remove('on');
+}
+
+function addToWLInSection(sym, nm, sectionId) {
+  if (!sym) return;
+  sym = sym.toUpperCase().trim();
+  if (S.watchlist.find(i=>i.sym===sym && i.section===sectionId)) {
+    toast(sym+' bereits in dieser Sektion'); return;
+  }
+  if (nm) S.names[sym] = nm;
+  S.watchlist.push({sym, name:nm||'', section: sectionId});
+  persist(); renderWL();
+  const secName = S.sections.find(s=>s.id===sectionId)?.name || '';
+  toast(`${sym} → ${secName} ✓`);
+  loadQuote(sym);
+  clearSearchUI();
+}
+
 function addToWL(sym, nm) {
   if (!sym) return;
   sym = sym.toUpperCase().trim();
-  // Duplikat-Check nur in aktiver Watchlist
   const activeSecs = S.sections.filter(s=>s.wlId===S.activeWlId);
   const activeSecIds = new Set(activeSecs.map(s=>s.id));
-  if (S.watchlist.find(i=>i.sym===sym && activeSecIds.has(i.section))) {
-    toast(sym+' bereits in dieser Watchlist'); return;
+  // Wenn nur 1 Sektion → direkt einfügen (wie bisher)
+  if (activeSecs.length === 1) {
+    if (S.watchlist.find(i=>i.sym===sym && activeSecIds.has(i.section))) {
+      toast(sym+' bereits in dieser Watchlist'); return;
+    }
+    if (nm) S.names[sym] = nm;
+    S.watchlist.push({sym, name:nm||'', section: activeSecs[0].id});
+    persist(); renderWL();
+    toast(sym+' zur Watchlist hinzugefügt ✓');
+    loadQuote(sym);
+    clearSearchUI();
+    return;
   }
-  if (nm) S.names[sym] = nm;
-  // In erste sichtbare (nicht-collapsed) Sektion der aktiven Watchliste
-  const targetSec = activeSecs.find(s=>!s.collapsed) || activeSecs[0] || S.sections[0];
-  S.watchlist.push({sym, name:nm||'', section: targetSec?.id||'default'});
-  persist(); renderWL();
-  toast(sym+' zur Watchlist hinzugefügt ✓');
-  loadQuote(sym);
-  clearSearchUI();
+  // Mehrere Sektionen → Auswahl anzeigen
+  closeDrop();
+  showSecPicker(sym, nm);
 }
 
 function clearSearchUI() {
@@ -3583,10 +3878,8 @@ function clearSearchUI() {
 }
 
 async function refreshAll() {
-  const b = document.getElementById('refreshBtn'); b.textContent='…';
   await loadAllQuotes();
   if (S.chartSym) await loadChart();
-  b.textContent='↻';
 }
 
 // ═══════════════════════════════════════════════════════════════════════
